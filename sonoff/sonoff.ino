@@ -369,6 +369,12 @@ void SetLedPower(uint8_t state)
   digitalWrite(pin[GPIO_LED1], (bitRead(led_inverted, 0)) ? !state : state);
 }
 
+void SetLedPower2(uint8_t state)
+{
+  if (state) state = 1;
+  digitalWrite(pin[GPIO_LED2], (bitRead(led_inverted, 0)) ? !state : state);
+}
+
 uint8_t GetFanspeed(void)
 {
   uint8_t fanspeed = 0;
@@ -1263,13 +1269,17 @@ void MqttDataHandler(char* topic, byte* data, unsigned int data_len)
         }
         blinks = 0;
         SetLedPower(Settings.ledstate &8);
+	SetLedPower2(Settings.ledstate &8);
       }
       snprintf_P(mqtt_data, sizeof(mqtt_data), S_JSON_COMMAND_SVALUE, command, GetStateText(bitRead(Settings.ledstate, 3)));
     }
     else if (CMND_LEDSTATE == command_code) {
       if ((payload >= 0) && (payload < MAX_LED_OPTION)) {
         Settings.ledstate = payload;
-        if (!Settings.ledstate) SetLedPower(0);
+        if (!Settings.ledstate) { 
+		SetLedPower(0);
+		SetLedPower2(0);
+	}
       }
       snprintf_P(mqtt_data, sizeof(mqtt_data), S_JSON_COMMAND_NVALUE, command, Settings.ledstate);
     }
@@ -2046,7 +2056,7 @@ void Every250mSeconds(void)
     }
     if ((!(Settings.ledstate &0x08)) && ((Settings.ledstate &0x06) || (blinks > 200) || (blinkstate))) {
 //    if ( (!Settings.flag.global_state && global_state.data) || ((!(Settings.ledstate &0x08)) && ((Settings.ledstate &0x06) || (blinks > 200) || (blinkstate))) ) {
-      SetLedPower(blinkstate);                            // Set led on or off
+      SetLedPower2(blinkstate);                            // Set led on or off
     }
     if (!blinkstate) {
       blinks--;
@@ -2603,6 +2613,7 @@ void GpioInit(void)
   }
 
   SetLedPower(Settings.ledstate &8);
+  SetLedPower2(Settings.ledstate &8);
 
   XdrvCall(FUNC_PRE_INIT);
 }
